@@ -117,10 +117,11 @@ join "order" as o on
 where
     extract(month
 from
-    o.order_date) = 8
-    and extract(year
-from
-    o.order_date) = 2024
+    o.order_date) = (
+    select
+        extract(month
+    from
+        current_date - interval '1 month'))
 group by
     customer_name
 having
