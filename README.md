@@ -1,5 +1,15 @@
 # E-Commerce Database Design
 
+## Table of Contents
+
+1. [Introduction](#1-introduction)
+2. [ERD](#2-erd)
+3. [Schema DDL](#3-schema-ddl)
+4. [Sample Queries](#4-sample-queries)
+   - [4.1. Generate a daily report of the total revenue for a specific date](#41-generate-a-daily-report-of-the-total-revenue-for-a-specific-date)
+   - [4.2. Generate a monthly report of the top-selling products in a given month](#42-generate-a-monthly-report-of-the-top-selling-products-in-a-given-month)
+   - [4.3. Retrieve a list of customers who have placed orders totaling more than $500 in the past month](#43-retrieve-a-list-of-customers-who-have-placed-orders-totaling-more-than-500-in-the-past-month)
+
 ## 1. Introduction
 
 This database schema is designed for an e-commerce application, where it organizes data related to products, categories, customers, orders, and order details. It leverages PostgreSQL with the "uuid-ossp" extension to generate UUIDs for unique identifiers in the `customer`, `order`, and `order_details` tables. The schema includes a `category` table to categorize products, a `product` table containing details about each product, a `customer` table for customer information, an `order` table for managing customer orders, and an `order_details` table that records specific products within each order. The schema enforces data integrity through foreign key relationships and various constraints, ensuring that data such as stock quantities and email formats are valid.
