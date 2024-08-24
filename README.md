@@ -1,18 +1,8 @@
 # E-Commerce Database Design
 
-## Table of Contents
-
-1. [Introduction](#1-introduction)
-2. [ERD](#2-erd)
-3. [Schema DDL](#3-schema-ddl)
-4. [Sample Queries](#4-sample-queries)
-   - [4.1. Generate a daily report of the total revenue for a specific date](#41-generate-a-daily-report-of-the-total-revenue-for-a-specific-date)
-   - [4.2. Generate a monthly report of the top-selling products in a given month](#42-generate-a-monthly-report-of-the-top-selling-products-in-a-given-month)
-   - [4.3. Retrieve a list of customers who have placed orders totaling more than $500 in the past month](#43-retrieve-a-list-of-customers-who-have-placed-orders-totaling-more-than-500-in-the-past-month)
-
 ## 1. Introduction
 
-This database schema is designed for an e-commerce application, where it organizes data related to products, categories, customers, orders, and order details. It leverages PostgreSQL with the "uuid-ossp" extension to generate UUIDs for unique identifiers in the `customer`, `order`, and `order_details` tables. The schema includes a `category` table to categorize products, a `product` table containing details about each product, a `customer` table for customer information, an `order` table for managing customer orders, and an `order_details` table that records specific products within each order. The schema enforces data integrity through foreign key relationships and various constraints, ensuring that data such as stock quantities and email formats are valid.
+This database schema is designed for an e-commerce application, where it organizes data related to products, categories, customers, orders, and order details. It leverages PostgreSQL with the "uuid-ossp" extension to generate UUIDs for unique identifiers in the `customer`, `orders`, and `order_details` tables. The schema includes a `category` table to categorize products, a `product` table containing details about each product, a `customer` table for customer information, an `orders` table for managing customer orders, and an `order_details` table that records specific products within each order. The schema enforces data integrity through foreign key relationships and various constraints, ensuring that data such as stock quantities and email formats are valid.
 
 ## 2. ERD
 
@@ -49,7 +39,7 @@ create table customer
     password text not null
 );
 
-create table "order"
+create table orders
 (
     order_id uuid default uuid_generate_v4() primary key,
     customer_id uuid not null,
@@ -65,7 +55,7 @@ create table order_details
     product_id serial not null,
     quantity integer check (quantity > 0),
     unit_price money,
-    foreign key (order_id) references "order" (order_id),
+    foreign key (order_id) references orders (order_id),
     foreign key (product_id) references product (product_id)
 );
 ```
@@ -79,7 +69,7 @@ select
     order_date,
     sum(total_amount)
 from
-    "order"
+    orders
 where
     order_date = '2024-08-05'
 group by
@@ -97,7 +87,7 @@ from
     product as p
 join order_details as od on
     p.product_id = od.product_id
-join "order" as o on
+join orders as o on
     od.order_id = o.order_id
 where
     extract(month
@@ -122,7 +112,7 @@ select
     sum(o.total_amount) as past_month_total_amount
 from
     customer as c
-join "order" as o on
+join orders as o on
     o.customer_id = c.customer_id
 where
     extract(month
@@ -136,4 +126,50 @@ group by
     customer_name
 having
     sum(o.total_amount) > 500::money;
+```
+
+### 4.4. Search for all products with the word "camera" in either the product name or description
+
+``` sql
+select
+    name,
+    description,
+    price,
+    stock_quantity,
+    sold_by
+from
+    product
+where
+    name like '%camera%'
+    or description like '%camera%';
+```
+
+### 4.5. Suggest popular products in the same category for the same author, excluding the purchsed product from the recommendations
+
+``` sql
+select
+    p.name,
+    p.description,
+    p.price,
+    p.stock_quantity,
+    p.sold_by,
+    sum(od.quantity) as purchase_count
+from
+    product p
+join order_details od on
+    p.product_id = od.product_id
+where
+    p.category_id = 1
+    and p.sold_by = 'Kodak'
+    and p.product_id not in (
+    select
+        product_id
+    from
+        order_details
+    where
+        product_id = 6)
+group by
+    p.product_id
+order by
+    purchase_count desc
 ```
