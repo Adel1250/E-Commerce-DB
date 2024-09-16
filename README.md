@@ -2,67 +2,15 @@
 
 ## 1. Introduction
 
-This database schema is designed for an e-commerce application, where it organizes data related to products, categories, customers, orders, and order details. It leverages PostgreSQL with the "uuid-ossp" extension to generate UUIDs for unique identifiers in the `customer`, `orders`, and `order_details` tables. The schema includes a `category` table to categorize products, a `product` table containing details about each product, a `customer` table for customer information, an `orders` table for managing customer orders, and an `order_details` table that records specific products within each order. The schema enforces data integrity through foreign key relationships and various constraints, ensuring that data such as stock quantities and email formats are valid.
+This database is designed to manage an e-commerce system, organizing products, categories, customers, orders, and order details. The **`category`** table stores product categories, while the **`product`** table contains detailed information about each product, including price, stock, and its associated category. The **`customer`** table holds customer information, including their names, email addresses, and passwords. The **`orders`** table tracks customer orders with order dates and total amounts, and the **`order_details`** table records specific details about each product in an order, including the quantity and unit price. A foreign key was added in **`order_details`** to directly link each order detail to a customer, streamlining queries related to customer purchase history.
 
 ## 2. ERD
 
 ![ERD](/diagram/e-commerce-erd.png)
 
-## 3. Schema DDL
+## 3. Sample Queries
 
-``` sql
-create extension if not exists "uuid-ossp";
-
-create table category
-(
-    category_id serial primary key,
-    category_name varchar(50)
-);
-
-create table product
-(
-    product_id serial primary key,
-    category_id serial not null,
-    name varchar(100) not null,
-    description varchar(200),
-    price money not null,
-    stock_quantity integer not null check (stock_quantity >= 0),
-    foreign key (category_id) references category(category_id)
-);
-
-create table customer
-(
-    customer_id uuid default uuid_generate_v4() primary key,
-    first_name varchar(50) not null,
-    last_name varchar(50) not null,
-    email varchar(255) not null check (email ~* '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'),
-    password text not null
-);
-
-create table orders
-(
-    order_id uuid default uuid_generate_v4() primary key,
-    customer_id uuid not null,
-    order_date date not null,
-    total_amount money not null,
-    foreign key (customer_id) references customer(customer_id)
-);
-
-create table order_details
-(
-    order_detail_id uuid default uuid_generate_v4() primary key,
-    order_id uuid not null,
-    product_id serial not null,
-    quantity integer check (quantity > 0),
-    unit_price money,
-    foreign key (order_id) references orders (order_id),
-    foreign key (product_id) references product (product_id)
-);
-```
-
-## 4. Sample Queries
-
-### 4.1. Generate a daily report of the total revenue for a specific date
+### 3.1. Generate a daily report of the total revenue for a specific date
 
 ``` sql
 select
@@ -76,7 +24,7 @@ group by
     order_date;
 ```
 
-### 4.2. Generate a monthly report of the top-selling products in a given month
+### 3.2. Generate a monthly report of the top-selling products in a given month
 
 ``` sql
 select
@@ -102,7 +50,7 @@ order by
     sold_count desc;
 ```
 
-### 4.3. Retrieve a list of customers who have placed orders totaling more than $500 in the past month
+### 3.3. Retrieve a list of customers who have placed orders totaling more than $500 in the past month
 
 ``` sql
 select
@@ -128,7 +76,7 @@ having
     sum(o.total_amount) > 500::money;
 ```
 
-### 4.4. Search for all products with the word "camera" in either the product name or description
+### 3.4. Search for all products with the word "camera" in either the product name or description
 
 ``` sql
 select
@@ -144,32 +92,40 @@ where
     or description like '%camera%';
 ```
 
-### 4.5. Suggest popular products in the same category for the same author, excluding the purchsed product from the recommendations
+### 3.5. Suggest popular products in the same category for the same author, excluding the purchsed product from the recommendations
 
 ``` sql
 select
-    p.name,
-    p.description,
-    p.price,
-    p.stock_quantity,
-    p.sold_by,
-    sum(od.quantity) as purchase_count
+    p.product_id,
+    p."name",
+    p.category_id
 from
     product p
-join order_details od on
-    p.product_id = od.product_id
 where
-    p.category_id = 1
-    and p.sold_by = 'Kodak'
-    and p.product_id not in (
+    p.product_id not in (
     select
-        product_id
+        od.product_id
     from
-        order_details
+        order_details od
     where
-        product_id = 6)
-group by
-    p.product_id
-order by
-    purchase_count desc
+        od.customer_id = 4)
+    and p.category_id in (
+    select
+        p2.category_id
+    from
+        product p2
+    join order_details od2 on
+        od2.product_id = p2.product_id
+    where
+        od2.customer_id = 4)
+    and p.sold_by in 
+    (
+    select
+        p2.sold_by
+    from
+        product p2
+    join order_details od2 on
+        od2.product_id = p2.product_id
+    where
+        od2.customer_id = 4)
 ```
