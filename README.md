@@ -6,7 +6,7 @@ This database is designed to manage an e-commerce system, organizing products, c
 
 ## 2. ERD
 
-![ERD](/diagram/e-commerce-erd.png)
+![ERD](/diagram/erd.png)
 
 ## 3. Sample Queries
 
@@ -128,4 +128,79 @@ where
         od2.product_id = p2.product_id
     where
         od2.customer_id = 4)
+```
+
+## 4. Sample Trigger Function
+
+The following function is triggered when a new order detail is inserted.
+
+``` sql
+create or replace
+    function insert_order_history()
+returns trigger as $$
+begin
+    insert
+    into
+    order_history (
+        order_detail_id,
+    customer_id,
+    order_date,
+    order_id,
+    product_id,
+    quantity,
+    unit_price
+    )
+values (
+        NEW.order_detail_id,
+        (
+select
+    o.customer_id
+from
+    orders o
+where
+    o.order_id = NEW.order_id),
+        (
+select
+    o.order_date
+from
+    orders o
+where
+    o.order_id = NEW.order_id),
+        NEW.order_id,
+NEW.product_id,
+NEW.quantity,
+NEW.unit_price
+    );
+
+return new;
+end;
+
+$$ language plpgsql;
+
+create trigger order_history_trigger
+after
+insert
+    on
+    order_details
+for each row
+execute function insert_order_history();
+```
+
+## 5. Applications on Locking
+
+### 5.1. Lock on a column
+
+It is not supported in Postgres.
+
+### 5.2. Lock on a row
+
+``` sql
+select
+    *
+from
+    product
+where
+    product_id = 1
+for
+update;
 ```
