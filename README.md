@@ -167,9 +167,9 @@ from
 where
     o.order_id = NEW.order_id),
         NEW.order_id,
-NEW.product_id,
-NEW.quantity,
-NEW.unit_price
+        NEW.product_id,
+        NEW.quantity,
+        NEW.unit_price
     );
 
 return new;
@@ -204,3 +204,61 @@ where
 for
 update;
 ```
+
+## 6. Performance Optimization Techniques
+
+### 6.1. Retrieve the total number of products in each category
+
+Before Optimization:
+
+``` sql
+select
+    c.category_name ,
+    count(p.product_id) as total_products
+from
+    product p
+natural join category c
+group by
+    c.category_name;
+```
+
+After Optimization:
+
+``` sql
+select
+    c.category_name ,
+    count(p.product_id) as total_products
+from
+    product p
+natural join category c
+group by
+    c.category_id;
+```
+
+Technique: Grouped by category_id instead of category_name as it is already indexed
+
+### 6.2. Find the top customers by total spending
+
+Query:
+
+```sql
+select
+    o.customer_id,
+    sum(o.total_amount) as customer_total_amount
+from
+    orders o
+group by
+    o.customer_id
+order by
+    customer_total_amount desc;
+```
+
+Optimization:
+
+``` sql
+drop index idx_customer_id;
+```
+
+Technique: Removed index on customer_id for the table orders as the query already scans the whole table, so need for an index as this could be an overhead
+
+### 6.3. Retrieve the most recent orders with customer information with 1000 orders
