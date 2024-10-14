@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-This database is designed to manage an e-commerce system, organizing products, categories, customers, orders, and order details. The **`category`** table stores product categories, while the **`product`** table contains detailed information about each product, including price, stock, and its associated category. The **`customer`** table holds customer information, including their names, email addresses, and passwords. The **`orders`** table tracks customer orders with order dates and total amounts, and the **`order_details`** table records specific details about each product in an order, including the quantity and unit price. A foreign key was added in **`order_details`** to directly link each order detail to a customer, streamlining queries related to customer purchase history.
+This database is designed to manage an e-commerce system, organizing products, categories, customers, orders, and order details. The **`category`** table stores product categories, while the **`product`** table contains detailed information about each product, including price, stock, and its associated category. The **`customer`** table holds customer information, including their names, email addresses, and passwords. The **`orders`** table tracks customer orders with order dates and total amounts, and the **`order_details`** table records specific details about each product in an order, including the quantity and unit price. A foreign key was added in **`order_details`** to directly link each order detail to a customer, streamlining queries related to customer purchase history
 
 ## 2. ERD
 
